@@ -7,6 +7,9 @@ Source files to build containers used for LS4GAN
 
 * General instruction
 
+We make Docker containers which can then be used in this form or
+derived into Singularity containers.
+
 ** Usage
 
 The containers are provided as ~Dockerfile~ with some supporting
@@ -30,6 +33,15 @@ Each container has its own entry target, but typically this is
 #+begin_example
   docker run -ti ls4gan/<name>
 #+end_example
+
+** Singularity
+
+Derive a Singularity container from local docker
+
+#+begin_example
+❯ singularity build ls4gan-<name>.img docker-daemon://ls4gan/<name>:latest
+#+end_example
+
 
 * Containers
 
@@ -104,6 +116,17 @@ And the two steps to register and upload an image:
 Or, ~docker pull~ as above.
 
 
+
+** Singularity
+
+To derive a Singularity container, currently fails:
+
+#+begin_example
+❯ singularity pull --docker-login docker://registry.sdcc.bnl.gov/ls4gan/toyzero/wirecell
+Enter Docker Username: bvlbne
+Enter Docker Password: 
+FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://registry.sdcc.bnl.gov/ls4gan/toyzero/wirecell: error pinging docker registry registry.sdcc.bnl.gov: Get "https://registry.sdcc.bnl.gov/v2/": dial tcp 130.199.148.226:443: i/o timeout
+#+end_example
 
 ** Dockerhub
 
