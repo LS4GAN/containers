@@ -1,0 +1,111 @@
+#+title: LS4GAN Containers
+#+EXPORT_FILE_NAME: index.html
+#+setupfile: https://ls4gan.github.io/other/setup-page.org
+#+options: toc:t
+
+Source files to build containers used for LS4GAN
+
+* General instruction
+
+** Usage
+
+The containers are provided as ~Dockerfile~ with some supporting
+files.  They may be built and run locally or used via docker-hub or
+similar.
+
+** Build
+
+Generally:
+
+#+begin_example
+  $ cd docker/<name>
+  $ docker build -t ls4gan/<name> .
+#+end_example
+
+** Run
+
+Each container has its own entry target, but typically this is
+~/bin/bash/~ and so one may interactively run a container like
+
+#+begin_example
+  docker run -ti ls4gan/<name>
+#+end_example
+
+* Containers
+
+** wirecell
+
+Provides Wire-Cell Toolkit C++ and Python and their externals.  It is
+built on a minimal Debian with WCT and additional software installed
+under ~/usr/local/~
+
+This environment can be used to run any "stand-alone" ~wire-cell~ job
+or any of the ~wirecell-*~ Python CLIs.  It also provides lots of
+Python goodies including Numpy, Matplotlib, ipython, JupyterLab
+(needing special ~docker run~ to see its ports).
+
+** TODO runner
+
+This container provides (will provide) support for running a toyzero
+pipeline as a single job.  It rides on top of the wirecell container.
+
+** TODO notebook
+
+This container provides (will provide) support for JupyterLab
+notebooks.
+
+* Registry
+
+The images may be available in a docker registry near you.
+
+** BNL/SDCC
+
+The containers are registered to ~registry.sdcc.bnl.gov~ which
+internal to BNL.  On a host which can access this server you use the
+registry like you would dockerhub.  Eg:
+
+#+begin_example
+❯ docker pull registry.sdcc.bnl.gov/toyzero/wirecell
+#+end_example
+
+Outside the BNL network it is possible to access the registry by
+forwarding a local port via SSH to an internal HTTPS proxy.  
+
+Basically [[https://docs.docker.com/config/daemon/systemd/#httphttps-proxy][docker guidance on setting HTTP/HTTPS proxy]].
+
+For example
+
+#+begin_example
+# cat <<EOF > /etc/systemd/system/docker.service.d/http-proxy.conf
+[Service]
+Environment="HTTP_PROXY=http://127.0.0.1:3128"
+Environment="HTTPS_PROXY=http://127.0.0.1:3128"
+Environment="NO_PROXY=localhost,127.0.0.1,.home,haiku"
+EOF
+# systemctl daemon-reload
+# systemctl restart docker
+#+end_example
+
+It is also helpful to add the internal IP address to ~/etc/hosts~.
+
+It should now be possible to login
+
+#+begin_example
+❯ docker login registry.sdcc.bnl.gov
+#+end_example
+
+And the two steps to register and upload an image:
+
+#+begin_example
+❯ docker tag ls4gan/wirecell registry.sdcc.bnl.gov/toyzero/wirecell
+❯ docker push registry.sdcc.bnl.gov/toyzero/wirecell
+#+end_example
+
+Or, ~docker pull~ as above.
+
+
+
+** Dockerhub
+
+This is no longer free to create a new organization.  For now we do
+not use it.
