@@ -70,6 +70,16 @@ notebooks.
 
 The images may be available in a docker registry near you.
 
+** Docker Hub
+
+The images are uploaded to Docker Hub and can be retrieved with, eg:
+
+#+begin_example
+  $ docker pull ls4gan/wirecell
+#+end_example
+
+Available images are listed at https://hub.docker.com/u/ls4gan
+
 ** BNL/SDCC
 
 The containers are registered to ~registry.sdcc.bnl.gov~ which
@@ -115,11 +125,23 @@ And the two steps to register and upload an image:
 
 Or, ~docker pull~ as above.
 
-
-
 ** Singularity
 
-To derive a Singularity container, currently fails:
+A Singularity image can be useful for running on batch systems.
+
+*** Docker Hub
+
+
+#+begin_example
+❯ singularity build ls4gan-wirecell.sif docker://ls4gan/wirecell
+❯ singularity exec ls4gan-wirecell.sif bash -c "/usr/local/bin/wire-cell --help"
+#+end_example
+
+
+*** SDCC Registry
+
+Currently does not work
+
 
 #+begin_example
 ❯ singularity pull --docker-login docker://registry.sdcc.bnl.gov/ls4gan/toyzero/wirecell
@@ -128,7 +150,3 @@ Enter Docker Password:
 FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://registry.sdcc.bnl.gov/ls4gan/toyzero/wirecell: error pinging docker registry registry.sdcc.bnl.gov: Get "https://registry.sdcc.bnl.gov/v2/": dial tcp 130.199.148.226:443: i/o timeout
 #+end_example
 
-** Dockerhub
-
-This is no longer free to create a new organization.  For now we do
-not use it.

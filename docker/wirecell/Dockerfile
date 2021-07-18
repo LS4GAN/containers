@@ -67,4 +67,4 @@ RUN pip install -e git+https://github.com/wirecell/wire-cell-python.git@master#e
 
 
 
-ENTRYPOINT ["/bin/bash"]
+ENTRYPOINT ["/bin/bash","-l","-c"]
