@@ -3,99 +3,159 @@
 #+setupfile: https://ls4gan.github.io/other/setup-page.org
 #+options: toc:t
 
-Source files to build containers used for LS4GAN
+This package collects recipes to build container images that may be
+used for LS4GAN related development and processing.
 
-* General instruction
+* General information
 
-We make Docker containers which can then be used in this form or
-derived into Singularity containers.
+Images are defined via a ~Dockerfile~ and some additional files in a
+sub directory.  From a Docker image a Singularity image may be derived
+and images are pushed to Docker Hub and/or SDCC's registry.
 
-** Usage
-
-The containers are provided as ~Dockerfile~ with some supporting
-files.  They may be built and run locally or used via docker-hub or
-similar.
+In the remainder of this section, basic and generic guidance is
+documented.  In the next section, descriptions of available images are
+listed.  Finally, some guidance in dealing with SDCC's registry is
+provided.
 
 ** Build
 
-Generally:
+A container image may be built locally with:
 
 #+begin_example
-  $ cd docker/<name>
+  $ mkdir ls4gan
+  $ git clone https://github.com/LS4GAN/containers.git ls4gan/containers
+  $ cd ls4gan/containers/docker/<name>
   $ docker build -t ls4gan/<name> .
 #+end_example
 
-** Run
+Note, some images build on top of others that are also built from
+here.  The naming convention illustrated above should be kept in mind
+when looking at a ~FROM~ line in a ~Dockerfile~.
 
-Each container has its own entry target, but typically this is
-~/bin/bash/~ and so one may interactively run a container like
+** Run a container
+
+Each container has its own default command (~CMD~) of ~bash~ which is
+run as the argument to the entry point (~ENTRYPOINT~) of ~bash -c~.
+Thus to get an interactive shell:
 
 #+begin_example
-  docker run -ti ls4gan/<name>
+  $ docker run -ti ls4gan/wirecell
+  #
+#+end_example
+
+Or to run a command provided by the image:
+
+#+begin_example
+  $ docker run -ti ls4gan/wirecell "wire-cell --help"
+  [...help message...]
 #+end_example
 
 ** Singularity
 
-Derive a Singularity container from local docker
+To derive a Singularity container image from a Docker image:
 
 #+begin_example
-❯ singularity build ls4gan-<name>.img docker-daemon://ls4gan/<name>:latest
+  $ singularity build ls4gan-<name>-latest.sif  $IMAGE_URL 
 #+end_example
 
+The ~$IMAGE_URL~ can be in one of several forms
 
-* Containers
+- local :: ~docker-daemon://ls4gan/<name>:latest~
+- docker hub :: ~docker://ls4gan/<name>:latest~
+- SDCC registry :: 
+
+It recommended to follow the illustrated naming convention so that
+some provenance is kept when sharing the resulting image file.
+
+To run a Singularity container
+
+#+begin_example
+  $ singularity exec ls4gan-<name>-latest.sif "wire-cell --help"
+#+end_example
+
+It is recommended to name the Singularity image file following the
+convention so that when sharing these files their origin is hinted.
+
+To run the default shell or a program in the container
+
+#+begin_example
+  $ singularity run  /srv/tmp/ls4gan-wirecell-latest.sif "wire-cell --help"
+  [ ...help message...]
+  $ singularity run  /srv/tmp/ls4gan-wirecell-latest.sif
+  Singularity> which wire-cell
+  /usr/local/bin/wire-cell
+#+end_example
+
+** Docker Hub
+
+The [[https://hub.docker.com/u/ls4gan.][ls4gan area on Docker Hub]] holds some of the images produced
+here.  In the examples we will use the [[https://hub.docker.com/repository/docker/ls4gan/wirecell][ls4gan/wirecell]] image.
+To get this image into your local docker, run:
+
+#+begin_example
+  $ docker pull ls4gan/wirecell:latest
+#+end_example
+
+Or, if you are building images and a ~docker login~ they may be
+uploaded with, eg:
+
+#+begin_example
+  $ docker push ls4gan/wirecell:latest
+#+end_example
+
+* Container Images
 
 ** wirecell
 
-Provides Wire-Cell Toolkit C++ and Python and their externals.  It is
-built on a minimal Debian with WCT and additional software installed
-under ~/usr/local/~
+This image provides the Wire-Cell Toolkit C++ and Python and their
+externals.  It is built on a minimal Debian with WCT and additional
+software installed under ~/usr/local/~
 
 This environment can be used to run any "stand-alone" ~wire-cell~ job
 or any of the ~wirecell-*~ Python CLIs.  It also provides lots of
 Python goodies including Numpy, Matplotlib, ipython, JupyterLab
 (needing special ~docker run~ to see its ports).
 
+It also provides ~snakemake~ so can be used to exercise the
+[[https://ls4gan.github.io/toyzero/][toyzero]] data generator.  Using
+the derived Singularity image to enjoy easy access to native home
+directory files:
+
+#+begin_example
+  $ git clone https://github.com/LS4GAN/toyzero.git
+  $ cd toyzero
+  $ singularity run /srv/tmp/ls4gan-wirecell-latest.sif "snakemake -jall -p just_images"
+  $ tree data
+  [...generated data files...]
+#+end_example
+
 ** TODO runner
 
 This container provides (will provide) support for running a toyzero
-pipeline as a single job.  It rides on top of the wirecell container.
+pipeline as a single, ready-to-run job.  It rides on top of the
+wirecell container.
 
 ** TODO notebook
 
 This container provides (will provide) support for JupyterLab
-notebooks.
+notebooks.  It includes ls4gan-python, toytools and other Python
 
-* Registry
+* BNL/SDCC Registry
 
-The images may be available in a docker registry near you.
-
-** Docker Hub
-
-The images are uploaded to Docker Hub and can be retrieved with, eg:
-
-#+begin_example
-  $ docker pull ls4gan/wirecell
-#+end_example
-
-Available images are listed at https://hub.docker.com/u/ls4gan
-
-** BNL/SDCC
-
-The containers are registered to ~registry.sdcc.bnl.gov~ which
-internal to BNL.  On a host which can access this server you use the
-registry like you would dockerhub.  Eg:
+BNL/SDCC provides a container registry called "Portus" at the internal
+nost ~registry.sdcc.bnl.gov~.  It is used much like Docker Hub but one
+must give the hostname explicitly:
 
 #+begin_example
 ❯ docker pull registry.sdcc.bnl.gov/toyzero/wirecell
 #+end_example
 
+** Remote access
+
 Outside the BNL network it is possible to access the registry by
-forwarding a local port via SSH to an internal HTTPS proxy.  
-
-Basically [[https://docs.docker.com/config/daemon/systemd/#httphttps-proxy][docker guidance on setting HTTP/HTTPS proxy]].
-
-For example
+forwarding a local port via SSH to an internal HTTPS proxy.
+Basically, follow [[https://docs.docker.com/config/daemon/systemd/#httphttps-proxy][docker guidance on setting HTTP/HTTPS proxy]].  For
+example
 
 #+begin_example
 # cat <<EOF > /etc/systemd/system/docker.service.d/http-proxy.conf
@@ -127,21 +187,8 @@ Or, ~docker pull~ as above.
 
 ** Singularity
 
-A Singularity image can be useful for running on batch systems.
-
-*** Docker Hub
-
-
-#+begin_example
-❯ singularity build ls4gan-wirecell.sif docker://ls4gan/wirecell
-❯ singularity exec ls4gan-wirecell.sif bash -c "/usr/local/bin/wire-cell --help"
-#+end_example
-
-
-*** SDCC Registry
-
-Currently does not work
-
+Currently building a Singularity image from a Docker image in Portus
+does not work.  Expect an error like:
 
 #+begin_example
 ❯ singularity pull --docker-login docker://registry.sdcc.bnl.gov/ls4gan/toyzero/wirecell
@@ -150,3 +197,5 @@ Enter Docker Password:
 FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://registry.sdcc.bnl.gov/ls4gan/toyzero/wirecell: error pinging docker registry registry.sdcc.bnl.gov: Get "https://registry.sdcc.bnl.gov/v2/": dial tcp 130.199.148.226:443: i/o timeout
 #+end_example
 
+This may be due to offsite access restriction.  In any case, it needs
+more checking.

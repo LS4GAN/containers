@@ -65,6 +65,8 @@ RUN pip install snakemake ipython matplotlib numpy jupyterlab \
 RUN pip install -e git+https://github.com/wirecell/wire-cell-python.git@master#egg=wirecell \
     && rm -rf /root/.cache
 
-
+ENV WIRECELL_PATH=/usr/local/share/wirecell
 
 ENTRYPOINT ["/bin/bash","-l","-c"]
+CMD "bash -l"
+

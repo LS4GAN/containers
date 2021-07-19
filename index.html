@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2021-07-18 Sun 16:52 -->
+<!-- 2021-07-19 Mon 11:41 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>LS4GAN Containers</title>
@@ -225,114 +225,188 @@
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents">
 <ul>
-<li><a href="#org4bf449e">1. General instruction</a>
+<li><a href="#org54e7ce0">1. General information</a>
 <ul>
-<li><a href="#org20058b7">1.1. Usage</a></li>
-<li><a href="#org8ba3e1f">1.2. Build</a></li>
-<li><a href="#orga014ccd">1.3. Run</a></li>
-<li><a href="#org09de344">1.4. Singularity</a></li>
+<li><a href="#org8933359">1.1. Build</a></li>
+<li><a href="#org0ce197a">1.2. Run a container</a></li>
+<li><a href="#org0431e16">1.3. Singularity</a></li>
+<li><a href="#org972109f">1.4. Docker Hub</a></li>
 </ul>
 </li>
-<li><a href="#orgdee1178">2. Containers</a>
+<li><a href="#orgacfae23">2. Container Images</a>
 <ul>
-<li><a href="#orgca3e182">2.1. wirecell</a></li>
-<li><a href="#orgb5e3ed0">2.2. <span class="todo TODO">TODO</span> runner</a></li>
-<li><a href="#org9e39376">2.3. <span class="todo TODO">TODO</span> notebook</a></li>
+<li><a href="#org31a625e">2.1. wirecell</a></li>
+<li><a href="#orgde96a0b">2.2. <span class="todo TODO">TODO</span> runner</a></li>
+<li><a href="#orge2100e4">2.3. <span class="todo TODO">TODO</span> notebook</a></li>
 </ul>
 </li>
-<li><a href="#orgdec8811">3. Registry</a>
+<li><a href="#org3117972">3. BNL/SDCC Registry</a>
 <ul>
-<li><a href="#orgfb9b72b">3.1. Docker Hub</a></li>
-<li><a href="#org97017f4">3.2. BNL/SDCC</a></li>
-<li><a href="#org2cfa8df">3.3. Singularity</a>
-<ul>
-<li><a href="#orgdafab18">3.3.1. Docker Hub</a></li>
-<li><a href="#orgb2ca070">3.3.2. SDCC Registry</a></li>
-</ul>
-</li>
+<li><a href="#org5f0b2e0">3.1. Remote access</a></li>
+<li><a href="#orgb0bb3bb">3.2. Singularity</a></li>
 </ul>
 </li>
 </ul>
 </div>
 </div>
 <p>
-Source files to build containers used for LS4GAN
+This package collects recipes to build container images that may be
+used for LS4GAN related development and processing.
 </p>
 
-<div id="outline-container-org4bf449e" class="outline-2">
-<h2 id="org4bf449e"><span class="section-number-2">1</span> General instruction</h2>
+<div id="outline-container-org54e7ce0" class="outline-2">
+<h2 id="org54e7ce0"><span class="section-number-2">1</span> General information</h2>
 <div class="outline-text-2" id="text-1">
 <p>
-We make Docker containers which can then be used in this form or
-derived into Singularity containers.
+Images are defined via a <code>Dockerfile</code> and some additional files in a
+sub directory.  From a Docker image a Singularity image may be derived
+and images are pushed to Docker Hub and/or SDCC's registry.
+</p>
+
+<p>
+In the remainder of this section, basic and generic guidance is
+documented.  In the next section, descriptions of available images are
+listed.  Finally, some guidance in dealing with SDCC's registry is
+provided.
 </p>
 </div>
 
-<div id="outline-container-org20058b7" class="outline-3">
-<h3 id="org20058b7"><span class="section-number-3">1.1</span> Usage</h3>
+<div id="outline-container-org8933359" class="outline-3">
+<h3 id="org8933359"><span class="section-number-3">1.1</span> Build</h3>
 <div class="outline-text-3" id="text-1-1">
 <p>
-The containers are provided as <code>Dockerfile</code> with some supporting
-files.  They may be built and run locally or used via docker-hub or
-similar.
-</p>
-</div>
-</div>
-
-<div id="outline-container-org8ba3e1f" class="outline-3">
-<h3 id="org8ba3e1f"><span class="section-number-3">1.2</span> Build</h3>
-<div class="outline-text-3" id="text-1-2">
-<p>
-Generally:
+A container image may be built locally with:
 </p>
 
-<pre class="example" id="org6ac1c47">
-$ cd docker/&lt;name&gt;
+<pre class="example" id="orgc674dda">
+$ mkdir ls4gan
+$ git clone https://github.com/LS4GAN/containers.git ls4gan/containers
+$ cd ls4gan/containers/docker/&lt;name&gt;
 $ docker build -t ls4gan/&lt;name&gt; .
 </pre>
+
+<p>
+Note, some images build on top of others that are also built from
+here.  The naming convention illustrated above should be kept in mind
+when looking at a <code>FROM</code> line in a <code>Dockerfile</code>.
+</p>
 </div>
 </div>
 
-<div id="outline-container-orga014ccd" class="outline-3">
-<h3 id="orga014ccd"><span class="section-number-3">1.3</span> Run</h3>
+<div id="outline-container-org0ce197a" class="outline-3">
+<h3 id="org0ce197a"><span class="section-number-3">1.2</span> Run a container</h3>
+<div class="outline-text-3" id="text-1-2">
+<p>
+Each container has its own default command (<code>CMD</code>) of <code>bash</code> which is
+run as the argument to the entry point (<code>ENTRYPOINT</code>) of <code>bash -c</code>.
+Thus to get an interactive shell:
+</p>
+
+<pre class="example" id="orgfcfa283">
+$ docker run -ti ls4gan/wirecell
+#
+</pre>
+
+<p>
+Or to run a command provided by the image:
+</p>
+
+<pre class="example" id="org92c8b8f">
+$ docker run -ti ls4gan/wirecell "wire-cell --help"
+[...help message...]
+</pre>
+</div>
+</div>
+
+<div id="outline-container-org0431e16" class="outline-3">
+<h3 id="org0431e16"><span class="section-number-3">1.3</span> Singularity</h3>
 <div class="outline-text-3" id="text-1-3">
 <p>
-Each container has its own entry target, but typically this is
-<code>/bin/bash/</code> and so one may interactively run a container like
+To derive a Singularity container image from a Docker image:
 </p>
 
-<pre class="example" id="org6a98055">
-docker run -ti ls4gan/&lt;name&gt;
+<pre class="example" id="orga2edc70">
+$ singularity build ls4gan-&lt;name&gt;-latest.sif  $IMAGE_URL 
+</pre>
+
+<p>
+The <code>$IMAGE_URL</code> can be in one of several forms
+</p>
+
+<dl class="org-dl">
+<dt>local</dt><dd><code>docker-daemon://ls4gan/&lt;name&gt;:latest</code></dd>
+<dt>docker hub</dt><dd><code>docker://ls4gan/&lt;name&gt;:latest</code></dd>
+<dt>SDCC registry</dt><dd></dd>
+</dl>
+
+<p>
+It recommended to follow the illustrated naming convention so that
+some provenance is kept when sharing the resulting image file.
+</p>
+
+<p>
+To run a Singularity container
+</p>
+
+<pre class="example" id="org5a869e0">
+$ singularity exec ls4gan-&lt;name&gt;-latest.sif "wire-cell --help"
+</pre>
+
+<p>
+It is recommended to name the Singularity image file following the
+convention so that when sharing these files their origin is hinted.
+</p>
+
+<p>
+To run the default shell or a program in the container
+</p>
+
+<pre class="example" id="orgc1521d2">
+$ singularity run  /srv/tmp/ls4gan-wirecell-latest.sif "wire-cell --help"
+[ ...help message...]
+$ singularity run  /srv/tmp/ls4gan-wirecell-latest.sif
+Singularity&gt; which wire-cell
+/usr/local/bin/wire-cell
 </pre>
 </div>
 </div>
 
-<div id="outline-container-org09de344" class="outline-3">
-<h3 id="org09de344"><span class="section-number-3">1.4</span> Singularity</h3>
+<div id="outline-container-org972109f" class="outline-3">
+<h3 id="org972109f"><span class="section-number-3">1.4</span> Docker Hub</h3>
 <div class="outline-text-3" id="text-1-4">
 <p>
-Derive a Singularity container from local docker
+The <a href="https://hub.docker.com/u/ls4gan.">ls4gan area on Docker Hub</a> holds some of the images produced
+here.  In the examples we will use the <a href="https://hub.docker.com/repository/docker/ls4gan/wirecell">ls4gan/wirecell</a> image.
+To get this image into your local docker, run:
 </p>
 
-<pre class="example" id="org0f8c013">
-❯ singularity build ls4gan-&lt;name&gt;.img docker-daemon://ls4gan/&lt;name&gt;:latest
+<pre class="example" id="orgc81f7d0">
+$ docker pull ls4gan/wirecell:latest
+</pre>
+
+<p>
+Or, if you are building images and a <code>docker login</code> they may be
+uploaded with, eg:
+</p>
+
+<pre class="example" id="orgbfdd586">
+$ docker push ls4gan/wirecell:latest
 </pre>
 </div>
 </div>
 </div>
 
-
-<div id="outline-container-orgdee1178" class="outline-2">
-<h2 id="orgdee1178"><span class="section-number-2">2</span> Containers</h2>
+<div id="outline-container-orgacfae23" class="outline-2">
+<h2 id="orgacfae23"><span class="section-number-2">2</span> Container Images</h2>
 <div class="outline-text-2" id="text-2">
 </div>
-<div id="outline-container-orgca3e182" class="outline-3">
-<h3 id="orgca3e182"><span class="section-number-3">2.1</span> wirecell</h3>
+<div id="outline-container-org31a625e" class="outline-3">
+<h3 id="org31a625e"><span class="section-number-3">2.1</span> wirecell</h3>
 <div class="outline-text-3" id="text-2-1">
 <p>
-Provides Wire-Cell Toolkit C++ and Python and their externals.  It is
-built on a minimal Debian with WCT and additional software installed
-under <code>/usr/local/</code>
+This image provides the Wire-Cell Toolkit C++ and Python and their
+externals.  It is built on a minimal Debian with WCT and additional
+software installed under <code>/usr/local/</code>
 </p>
 
 <p>
@@ -341,82 +415,71 @@ or any of the <code>wirecell-*</code> Python CLIs.  It also provides lots of
 Python goodies including Numpy, Matplotlib, ipython, JupyterLab
 (needing special <code>docker run</code> to see its ports).
 </p>
+
+<p>
+It also provides <code>snakemake</code> so can be used to exercise the
+<a href="https://ls4gan.github.io/toyzero/">toyzero</a> data generator.  Using
+the derived Singularity image to enjoy easy access to native home
+directory files:
+</p>
+
+<pre class="example" id="org7433f1c">
+$ git clone https://github.com/LS4GAN/toyzero.git
+$ cd toyzero
+$ singularity run /srv/tmp/ls4gan-wirecell-latest.sif "snakemake -jall -p just_images"
+$ tree data
+[...generated data files...]
+</pre>
 </div>
 </div>
 
-<div id="outline-container-orgb5e3ed0" class="outline-3">
-<h3 id="orgb5e3ed0"><span class="section-number-3">2.2</span> <span class="todo TODO">TODO</span> runner</h3>
+<div id="outline-container-orgde96a0b" class="outline-3">
+<h3 id="orgde96a0b"><span class="section-number-3">2.2</span> <span class="todo TODO">TODO</span> runner</h3>
 <div class="outline-text-3" id="text-2-2">
 <p>
 This container provides (will provide) support for running a toyzero
-pipeline as a single job.  It rides on top of the wirecell container.
+pipeline as a single, ready-to-run job.  It rides on top of the
+wirecell container.
 </p>
 </div>
 </div>
 
-<div id="outline-container-org9e39376" class="outline-3">
-<h3 id="org9e39376"><span class="section-number-3">2.3</span> <span class="todo TODO">TODO</span> notebook</h3>
+<div id="outline-container-orge2100e4" class="outline-3">
+<h3 id="orge2100e4"><span class="section-number-3">2.3</span> <span class="todo TODO">TODO</span> notebook</h3>
 <div class="outline-text-3" id="text-2-3">
 <p>
 This container provides (will provide) support for JupyterLab
-notebooks.
+notebooks.  It includes ls4gan-python, toytools and other Python
 </p>
 </div>
 </div>
 </div>
 
-<div id="outline-container-orgdec8811" class="outline-2">
-<h2 id="orgdec8811"><span class="section-number-2">3</span> Registry</h2>
+<div id="outline-container-org3117972" class="outline-2">
+<h2 id="org3117972"><span class="section-number-2">3</span> BNL/SDCC Registry</h2>
 <div class="outline-text-2" id="text-3">
 <p>
-The images may be available in a docker registry near you.
-</p>
-</div>
-
-<div id="outline-container-orgfb9b72b" class="outline-3">
-<h3 id="orgfb9b72b"><span class="section-number-3">3.1</span> Docker Hub</h3>
-<div class="outline-text-3" id="text-3-1">
-<p>
-The images are uploaded to Docker Hub and can be retrieved with, eg:
+BNL/SDCC provides a container registry called "Portus" at the internal
+nost <code>registry.sdcc.bnl.gov</code>.  It is used much like Docker Hub but one
+must give the hostname explicitly:
 </p>
 
-<pre class="example" id="orgebdae8d">
-$ docker pull ls4gan/wirecell
-</pre>
-
-<p>
-Available images are listed at <a href="https://hub.docker.com/u/ls4gan">https://hub.docker.com/u/ls4gan</a>
-</p>
-</div>
-</div>
-
-<div id="outline-container-org97017f4" class="outline-3">
-<h3 id="org97017f4"><span class="section-number-3">3.2</span> BNL/SDCC</h3>
-<div class="outline-text-3" id="text-3-2">
-<p>
-The containers are registered to <code>registry.sdcc.bnl.gov</code> which
-internal to BNL.  On a host which can access this server you use the
-registry like you would dockerhub.  Eg:
-</p>
-
-<pre class="example" id="org9909fa2">
+<pre class="example" id="org6db1537">
 ❯ docker pull registry.sdcc.bnl.gov/toyzero/wirecell
 </pre>
+</div>
 
+<div id="outline-container-org5f0b2e0" class="outline-3">
+<h3 id="org5f0b2e0"><span class="section-number-3">3.1</span> Remote access</h3>
+<div class="outline-text-3" id="text-3-1">
 <p>
 Outside the BNL network it is possible to access the registry by
-forwarding a local port via SSH to an internal HTTPS proxy.  
+forwarding a local port via SSH to an internal HTTPS proxy.
+Basically, follow <a href="https://docs.docker.com/config/daemon/systemd/#httphttps-proxy">docker guidance on setting HTTP/HTTPS proxy</a>.  For
+example
 </p>
 
-<p>
-Basically <a href="https://docs.docker.com/config/daemon/systemd/#httphttps-proxy">docker guidance on setting HTTP/HTTPS proxy</a>.
-</p>
-
-<p>
-For example
-</p>
-
-<pre class="example" id="org7842573">
+<pre class="example" id="orgffbbecf">
 # cat &lt;&lt;EOF &gt; /etc/systemd/system/docker.service.d/http-proxy.conf
 [Service]
 Environment="HTTP_PROXY=http://127.0.0.1:3128"
@@ -435,7 +498,7 @@ It is also helpful to add the internal IP address to <code>/etc/hosts</code>.
 It should now be possible to login
 </p>
 
-<pre class="example" id="org29a685c">
+<pre class="example" id="orge844f96">
 ❯ docker login registry.sdcc.bnl.gov
 </pre>
 
@@ -443,7 +506,7 @@ It should now be possible to login
 And the two steps to register and upload an image:
 </p>
 
-<pre class="example" id="org9fbde92">
+<pre class="example" id="orgd0d73df">
 ❯ docker tag ls4gan/wirecell registry.sdcc.bnl.gov/toyzero/wirecell
 ❯ docker push registry.sdcc.bnl.gov/toyzero/wirecell
 </pre>
@@ -454,47 +517,32 @@ Or, <code>docker pull</code> as above.
 </div>
 </div>
 
-<div id="outline-container-org2cfa8df" class="outline-3">
-<h3 id="org2cfa8df"><span class="section-number-3">3.3</span> Singularity</h3>
-<div class="outline-text-3" id="text-3-3">
+<div id="outline-container-orgb0bb3bb" class="outline-3">
+<h3 id="orgb0bb3bb"><span class="section-number-3">3.2</span> Singularity</h3>
+<div class="outline-text-3" id="text-3-2">
 <p>
-A Singularity image can be useful for running on batch systems.
-</p>
-</div>
-
-<div id="outline-container-orgdafab18" class="outline-4">
-<h4 id="orgdafab18"><span class="section-number-4">3.3.1</span> Docker Hub</h4>
-<div class="outline-text-4" id="text-3-3-1">
-<pre class="example" id="org852a67c">
-❯ singularity build ls4gan-wirecell.sif docker://ls4gan/wirecell
-❯ singularity exec ls4gan-wirecell.sif bash -c "/usr/local/bin/wire-cell --help"
-</pre>
-</div>
-</div>
-
-
-<div id="outline-container-orgb2ca070" class="outline-4">
-<h4 id="orgb2ca070"><span class="section-number-4">3.3.2</span> SDCC Registry</h4>
-<div class="outline-text-4" id="text-3-3-2">
-<p>
-Currently does not work
+Currently building a Singularity image from a Docker image in Portus
+does not work.  Expect an error like:
 </p>
 
-
-<pre class="example" id="orgb431e0d">
+<pre class="example" id="org13b6b46">
 ❯ singularity pull --docker-login docker://registry.sdcc.bnl.gov/ls4gan/toyzero/wirecell
 Enter Docker Username: bvlbne
 Enter Docker Password: 
 FATAL:   While making image from oci registry: error fetching image to cache: failed to get checksum for docker://registry.sdcc.bnl.gov/ls4gan/toyzero/wirecell: error pinging docker registry registry.sdcc.bnl.gov: Get "https://registry.sdcc.bnl.gov/v2/": dial tcp 130.199.148.226:443: i/o timeout
 </pre>
-</div>
+
+<p>
+This may be due to offsite access restriction.  In any case, it needs
+more checking.
+</p>
 </div>
 </div>
 </div>
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: BV</p>
-<p class="date">Created: 2021-07-18 Sun 16:52</p>
+<p class="date">Created: 2021-07-19 Mon 11:41</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
