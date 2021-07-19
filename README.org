@@ -7,6 +7,10 @@ This package collects recipes to build container images that may be
 used for LS4GAN related development and processing.
 
 * General information
+:PROPERTIES:
+:CUSTOM_ID: info
+:END:
+
 
 Images are defined via a ~Dockerfile~ and some additional files in a
 sub directory.  From a Docker image a Singularity image may be derived
@@ -18,6 +22,9 @@ listed.  Finally, some guidance in dealing with SDCC's registry is
 provided.
 
 ** Build
+:PROPERTIES:
+:CUSTOM_ID: build
+:END:
 
 A container image may be built locally with:
 
@@ -33,6 +40,9 @@ here.  The naming convention illustrated above should be kept in mind
 when looking at a ~FROM~ line in a ~Dockerfile~.
 
 ** Run a container
+:PROPERTIES:
+:CUSTOM_ID: run
+:END:
 
 Each container has its own default command (~CMD~) of ~bash~ which is
 run as the argument to the entry point (~ENTRYPOINT~) of ~bash -c~.
@@ -51,6 +61,9 @@ Or to run a command provided by the image:
 #+end_example
 
 ** Singularity
+:PROPERTIES:
+:CUSTOM_ID: sing
+:END:
 
 To derive a Singularity container image from a Docker image:
 
@@ -87,6 +100,10 @@ To run the default shell or a program in the container
 #+end_example
 
 ** Docker Hub
+:PROPERTIES:
+:CUSTOM_ID: dockerhub
+:END:
+
 
 The [[https://hub.docker.com/u/ls4gan.][ls4gan area on Docker Hub]] holds some of the images produced
 here.  In the examples we will use the [[https://hub.docker.com/repository/docker/ls4gan/wirecell][ls4gan/wirecell]] image.
@@ -104,8 +121,16 @@ uploaded with, eg:
 #+end_example
 
 * Container Images
+:PROPERTIES:
+:CUSTOM_ID: avilable
+:END:
+
 
 ** wirecell
+:PROPERTIES:
+:CUSTOM_ID: wirecell-image
+:END:
+
 
 This image provides the Wire-Cell Toolkit C++ and Python and their
 externals.  It is built on a minimal Debian with WCT and additional
@@ -130,17 +155,29 @@ directory files:
 #+end_example
 
 ** TODO runner
+:PROPERTIES:
+:CUSTOM_ID: runner-image
+:END:
+
 
 This container provides (will provide) support for running a toyzero
 pipeline as a single, ready-to-run job.  It rides on top of the
 wirecell container.
 
 ** TODO notebook
+:PROPERTIES:
+:CUSTOM_ID: notebook-image
+:END:
+
 
 This container provides (will provide) support for JupyterLab
 notebooks.  It includes ls4gan-python, toytools and other Python
 
 * BNL/SDCC Registry
+:PROPERTIES:
+:CUSTOM_ID: portus
+:END:
+
 
 BNL/SDCC provides a container registry called "Portus" at the internal
 nost ~registry.sdcc.bnl.gov~.  It is used much like Docker Hub but one
@@ -151,6 +188,10 @@ must give the hostname explicitly:
 #+end_example
 
 ** Remote access
+:PROPERTIES:
+:CUSTOM_ID: remote
+:END:
+
 
 Outside the BNL network it is possible to access the registry by
 forwarding a local port via SSH to an internal HTTPS proxy.
@@ -186,6 +227,10 @@ And the two steps to register and upload an image:
 Or, ~docker pull~ as above.
 
 ** Singularity
+:PROPERTIES:
+:CUSTOM_ID: port-sing-prob
+:END:
+
 
 Currently building a Singularity image from a Docker image in Portus
 does not work.  Expect an error like:
