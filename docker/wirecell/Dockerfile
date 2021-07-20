@@ -1,6 +1,16 @@
 FROM debian:bullseye-slim
 MAINTAINER Brett Viren <brett.viren@gmail.com>
 
+ARG WCTOOLKIT_VERSION=0.15.0
+ARG WCPYTHON_VERSION=0.13.0
+ARG JSONNET_VERSION=0.17.0
+# verions for boost, tbb, etc?
+
+LABEL \
+    wctoolkit_version=$WCTOOLKIT_VERSION \
+    wcpython_version=$WCPYTHON_VERSION \
+    jsonnet_version=$JSONNET_VERSION    
+
 COPY packages packages
 
 RUN apt-get update -qq \
@@ -13,7 +23,7 @@ RUN apt-get update -qq \
 RUN cd /root && \
     git clone https://github.com/google/jsonnet.git && \
     cd jsonnet && \
-    git checkout v0.17.0 && \
+    git checkout v${JSONNET_VERSION} && \
     make -j$(nproc) && make install && \
     cd /root && \
     rm -rf jsonnet
@@ -42,7 +52,7 @@ RUN git clone https://github.com/gabime/spdlog.git /root/spdlog \
 RUN cd /root \
     && git clone https://github.com/WireCell/wire-cell-toolkit.git \
     && cd wire-cell-toolkit \
-    && git checkout 0.15.0
+    && git checkout ${WCTOOLKIT_VERSION}
 
 RUN ln -sf /usr/bin/python3 /usr/local/bin/python
 RUN cd /root/wire-cell-toolkit \
@@ -62,7 +72,7 @@ RUN cd /root/wire-cell-toolkit \
 RUN pip install snakemake ipython matplotlib numpy jupyterlab \
     && rm -rf /root/.cache
 # fixme: need to make some release!
-RUN pip install -e git+https://github.com/wirecell/wire-cell-python.git@master#egg=wirecell \
+RUN pip install -e git+https://github.com/wirecell/wire-cell-python.git@${WCPYTHON_VERSION}#egg=wirecell \
     && rm -rf /root/.cache
 
 ENV WIRECELL_PATH=/usr/local/share/wirecell

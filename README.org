@@ -154,6 +154,21 @@ directory files:
   [...generated data files...]
 #+end_example
 
+*** Versions
+
+The ~ls4gan/wirecell~ container image is versioned to reflect the
+version of Wire-Cell Toolkit.  The version of Wire-Cell Python and
+other packages may be chosen to be newer.  Defaults are provided or
+may be overridden, eg:
+
+#+begin_example
+  $ docker build -t ls4gan/wirecell:0.15.0 \
+     [ --build-arg WCPYTHON_VERSION=X.Y.Z ... ] \
+     .
+  $ docker push ls4gan/wirecell:0.15.0
+#+end_example
+
+
 ** TODO runner
 :PROPERTIES:
 :CUSTOM_ID: runner-image
