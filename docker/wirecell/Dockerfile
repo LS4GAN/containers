@@ -1,8 +1,8 @@
 FROM debian:bullseye-slim
 MAINTAINER Brett Viren <brett.viren@gmail.com>
 
-ARG WCTOOLKIT_VERSION=0.15.0
-ARG WCPYTHON_VERSION=0.13.0
+ARG WCTOOLKIT_VERSION=0.16.0
+ARG WCPYTHON_VERSION=0.14.0
 ARG JSONNET_VERSION=0.17.0
 # verions for boost, tbb, etc?
 
@@ -14,20 +14,40 @@ LABEL \
 COPY packages packages
 
 RUN apt-get update -qq \
- && ln -sf /usr/share/zoneinfo/UTC /etc/localtime \
- && apt-get -y install $(cat /packages) \
- && rm -f /packages \
- && apt-get clean \
- && rm -rf /usr/share/locale/[a-df-z]* 
+    && ln -sf /usr/share/zoneinfo/UTC /etc/localtime \
+    && apt-get -y install $(cat /packages) \
+    && apt-get clean \
+    && rm -rf /usr/share/locale/[a-df-z]* \
+    && rm -f /packages
+
+Run mkdir -p /usr/local/{bin,lib,include
+
+
+
+# RUN cd /root && \
+#     git clone https://github.com/google/jsonnet.git && \
+#     cd jsonnet && \
+#     git checkout v${JSONNET_VERSION} && \
+#     make -j$(nproc) && make install && \
+#     cd /root && \
+#     rm -rf jsonnet /usr/local/lib/libjsonnet++.so* /usr/local/include/libjsonnet++.h
 
 RUN cd /root && \
-    git clone https://github.com/google/jsonnet.git && \
-    cd jsonnet && \
+    wget -O /usr/include/libjsonnet.h \
+      https://raw.githubusercontent.com/google/jsonnet/v${JSONNET_VERSION}/include/libjsonnet.h && \
+    git clone https://github.com/google/go-jsonnet.git && \
+    cd go-jsonnet && \
     git checkout v${JSONNET_VERSION} && \
-    make -j$(nproc) && make install && \
+    go build ./cmd/jsonnet && \
+    go build ./cmd/jsonnetfmt && \
+    go build ./cmd/jsonnet-deps && \
+    CGO_CXXFLAGS="-std=c++17 -Wall -I/usr/local/include" \
+      go build -o libgojsonnet.so -buildmode=c-shared ./c-bindings && \
+    cp libgojsonnet.h /usr/local/include/ && \
+    cp libgojsonnet.so /usr/local/lib/ && \
+    cp jsonnet jsonnetfmt jsonnet-deps /usr/local/bin/ && \
     cd /root && \
-    rm -rf jsonnet
-# fixme: add go-jsonnet
+    rm -rf go-jsonnet
 
 RUN cd /root && \
     wget https://boostorg.jfrog.io/artifactory/main/release/1.76.0/source/boost_1_76_0.tar.bz2 && \
@@ -58,6 +78,7 @@ RUN ln -sf /usr/bin/python3 /usr/local/bin/python
 RUN cd /root/wire-cell-toolkit \
     && ./wcb configure --prefix=/usr/local \
     --with-jsonnet=/usr/local \
+    --with-jsonnet-libs=gojsonnet \
     --with-tbb=/opt/oneapi-tbb-2021.1.1 \
     --with-tbb-include=/opt/oneapi-tbb-2021.1.1/include \
     --with-tbb-lib=/opt/oneapi-tbb-2021.1.1/lib/intel64/gcc4.8 \
@@ -75,8 +96,20 @@ RUN pip install snakemake ipython matplotlib numpy jupyterlab \
 RUN pip install -e git+https://github.com/wirecell/wire-cell-python.git@${WCPYTHON_VERSION}#egg=wirecell \
     && rm -rf /root/.cache
 
+ENV     HOME /home/user
+
+RUN     useradd \
+            --create-home \
+            --home-dir $HOME \
+            --uid 1000 \
+            user \
+ &&     chown -R user:user $HOME
+
+WORKDIR $HOME
+
 ENV WIRECELL_PATH=/usr/local/share/wirecell
 
 ENTRYPOINT ["/bin/bash","-l","-c"]
 CMD "bash -l"
+
 

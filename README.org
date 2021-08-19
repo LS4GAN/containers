@@ -1,4 +1,4 @@
-#+title: LS4GAN Containers
+
 #+EXPORT_FILE_NAME: index.html
 #+setupfile: https://ls4gan.github.io/other/setup-page.org
 #+options: toc:t
@@ -32,7 +32,7 @@ A container image may be built locally with:
   $ mkdir ls4gan
   $ git clone https://github.com/LS4GAN/containers.git ls4gan/containers
   $ cd ls4gan/containers/docker/<name>
-  $ docker build -t ls4gan/<name> .
+  $ docker build -t ls4gan/<name>:<version> .
 #+end_example
 
 Note, some images build on top of others that are also built from
@@ -142,9 +142,10 @@ Python goodies including Numpy, Matplotlib, ipython, JupyterLab
 (needing special ~docker run~ to see its ports).
 
 It also provides ~snakemake~ so can be used to exercise the
-[[https://ls4gan.github.io/toyzero/][toyzero]] data generator.  Using
-the derived Singularity image to enjoy easy access to native home
-directory files:
+[[https://ls4gan.github.io/toyzero/][toyzero]] data generator.
+
+Using the derived Singularity image to enjoy easy access to native
+home directory files:
 
 #+begin_example
   $ git clone https://github.com/LS4GAN/toyzero.git
@@ -152,6 +153,22 @@ directory files:
   $ singularity run /srv/tmp/ls4gan-wirecell-latest.sif "snakemake -jall -p just_images"
   $ tree data
   [...generated data files...]
+#+end_example
+
+The approximate equivalent directly with Docker in a minimal
+environment is like:
+
+#+begin_example
+  $ cd .. # parent holding local toyzero/
+  $ mkdir run
+  $ cd run/
+  $ cp -a ../toyzero/{Snakefile,cfg,toyzero.yaml} .
+  $ docker run \
+      --user user \
+      --volume (pwd):/data \
+      -ti ls4gan/wirecell:0.16.0 \
+      "cd /data && snakemake just_images -j1 -p --config seed=1234 outdir=test10 ntracks=100 nevents=10 wcloglvl=debug threads=8"
+  $ tree test1 
 #+end_example
 
 *** Versions
@@ -259,3 +276,73 @@ FATAL:   While making image from oci registry: error fetching image to cache: fa
 
 This may be due to offsite access restriction.  In any case, it needs
 more checking.
+
+* Example for toyzero
+
+** Toy "one"
+
+Toy "one" is the first "real" use of ~toyzero~.
+
+*** Docker
+
+First production run on SDCC will involve jobs something like this with ~docker~:
+
+#+begin_example
+  $ docker run --user user --volume (pwd):/data \
+    -ti ls4gan/toyzero:0.3.0 \
+    "cd toyzero && \
+     snakemake just_tar -j1 -p \
+     --config outdir=/data seed=1234 ntracks=100 nevents=1 wcloglvl=debug threads=8"
+  $ ls -lh toyzero-100-1-1234.tar 
+  -rw-r--r-- 1 bv bv 13M Aug 19 16:00 toyzero-100-1-1234.tar
+  $ du -sh seed-1234
+  4.8M	seed-1234
+  $ rm -rf seed-1234
+#+end_example
+
+Note:
+- We bind mount CWD to ~/data~ in the container and then use that as ~outdir~
+- The ~seed~ MUST be chosen unique each run
+- The ~nevents~ chosen to match run time
+- The ~threads~ say how many threads are used for ~wire-cell~.  Likely set to 1 for batch processing.  More can be used but the RAM usage will increase.  At 8 threads about 4 GB RAM is used.  There is also ~-j1~ to limit number of jobs that ~snakemake~ will run concurrently.  There are two ~wire-cell~ jobs in the graph and they provide the bottleneck.  Setting this to 2 (with ~threads=1~) would be reasonable.
+- A ~./.snakemake/~ directory will get made and used *inside the container* and thus not retained, but it is not needed.
+- The results to keep are in a tar file by default named ~toyzero-{ntracks}-{nevents}-{seed}.tar~ which is built from contents of directory ~{outdir}/seed-{seed}/~.  This directory can be discarded once the tar file is secured.
+
+*** Singularity
+
+Derive the Singularity image from the docker.
+
+#+begin_example
+  $ singularity build ls4gan-toyzero-030.sif \
+      docker://ls4gan/toyzero:0.3.0
+  $ ls -lh ls4gan-toyzero-030.sif
+  -rwxr-xr-x 1 bv bv 580M Aug 19 16:58 ls4gan-toyzero-030.sif
+#+end_example
+
+Singularity requires a little awkward run pattern to first copy the
+~toyzero~ config from the container's ~user~ account to a host CWD owned
+by the native user.
+
+#+begin_example
+  $ mkdir run-singularity
+  $ cd run-singularity/
+  $ singularity run ../ls4gan-toyzero-030.sif \
+    "cp -a /home/user/toyzero/* . && \
+    snakemake just_tar -j1 -p --config  seed=1234 ntracks=100 nevents=1 wcloglvl=debug threads=8"
+  $ ls -lh toyzero-100-1-1234.tar
+  -rw-r--r-- 1 bv bv 13M Aug 19 17:15 toyzero-100-1-1234.tar
+  $ mv toyzero-100-1-1234.tar ..
+  $ cd ..
+  $ rm -rf run-singularity/
+#+end_example
+
+
+**** TODO
+
+- [ ] fix warning from singularity
+
+#+begin_example
+2021/08/19 17:20:14  warn rootless{opt/oneapi-tbb-2021.1.1/lib/intel64/gcc4.8/libtbb.so} ignoring (usually) harmless EPERM on setxattr "user.rootlesscontainers"
+...
+2021/08/19 17:20:20  warn rootless{home/user/toyzero/.git/objects/pack/pack-6cffdba70a871b245ca1201e3133eb5a1adf298a.idx} ignoring (usually) harmless EPERM on setxattr "user.rootlesscontainers"
+#+end_example

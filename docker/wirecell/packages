@@ -2,11 +2,11 @@ autoconf
 automake
 autotools-dev
 build-essential
-clang
 cmake
 g++
 gcc
 git
+golang-go
 libbz2-dev
 libeigen3-dev
 libfftw3-dev
